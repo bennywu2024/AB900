@@ -1,0 +1,2366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AB-900: Copilot & Agent Fundamentals Mock Exam</title>
+    <style>
+        :root {
+            --primary: #0078d4;
+            --primary-dark: #106ebe;
+            --bg: #f3f2f1;
+            --card-bg: #ffffff;
+            --text: #323130;
+            --success: #107c10;
+            --error: #a80000;
+            --warning: #797775;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 800px;
+            background: var(--card-bg);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            padding: 40px;
+            position: relative;
+        }
+
+        h1, h2 { color: var(--text); }
+        
+        .header-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #e1dfdd;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        .status-badge {
+            background: #e1dfdd;
+            padding: 5px 12px;
+            border-radius: 12px;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+
+        /* Setup Screen */
+        #setup-screen { text-align: center; }
+        
+        input[type="number"] {
+            padding: 10px;
+            font-size: 1.1em;
+            border-radius: 4px;
+            border: 1px solid #8a8886;
+            width: 80px;
+            text-align: center;
+        }
+
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 1em;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 20px;
+        }
+
+        button:hover { background-color: var(--primary-dark); }
+        button:disabled { background-color: #c8c6c4; cursor: not-allowed; }
+
+        /* Quiz Screen */
+        .question-text {
+            font-size: 1.25em;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .options-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .option-btn {
+            background: white;
+            border: 1px solid #8a8886;
+            color: var(--text);
+            text-align: left;
+            padding: 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.2s;
+        }
+
+        .option-btn:hover:not(:disabled) {
+            background-color: #f3f2f1;
+            border-color: var(--primary);
+        }
+
+        .option-btn.correct {
+            background-color: #dff6dd;
+            border-color: var(--success);
+            color: var(--success);
+            font-weight: 600;
+        }
+
+        .option-btn.incorrect {
+            background-color: #fde7e9;
+            border-color: var(--error);
+            color: var(--error);
+        }
+
+        .controls {
+            margin-top: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .hint-box, .explanation-box {
+            background-color: #f3f2f1;
+            border-left: 4px solid var(--primary);
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 0 4px 4px 0;
+            display: none;
+        }
+        
+        .hint-box { border-left-color: var(--warning); }
+        
+        .explanation-box strong { color: var(--primary-dark); }
+
+        #hint-btn {
+            background-color: transparent;
+            color: var(--primary);
+            border: 1px solid var(--primary);
+            padding: 8px 16px;
+        }
+
+        #hint-btn:hover { background-color: #eff6fc; }
+
+        /* Results */
+        .summary-stat {
+            font-size: 1.5em;
+            margin: 20px 0;
+        }
+
+        .hidden { display: none !important; }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- SETUP SCREEN -->
+    <div id="setup-screen">
+        <h1>AB-900 Exam Simulator</h1>
+        <p>Microsoft 365 Certified: Copilot and Agent Administration Fundamentals</p>
+        <div style="margin: 30px 0;">
+            <label for="q-count">How many questions would you like to attempt?</label><br><br>
+            <input type="number" id="q-count" min="5" max="300" value="20">
+            <span id="max-q-label" style="color: #605e5c; font-size: 0.9em;"></span>
+        </div>
+        <button onclick="startExam()">Start Exam</button>
+    </div>
+
+    <!-- QUIZ SCREEN -->
+    <div id="quiz-screen" class="hidden">
+        <div class="header-bar">
+            <span class="status-badge" id="progress-indicator">Question 1/20</span>
+            <span class="status-badge" id="score-indicator">Score: 0</span>
+        </div>
+
+        <div id="question-container">
+            <div class="question-text" id="q-text">Loading...</div>
+            <div class="options-grid" id="options-container">
+                <!-- Options injected here -->
+            </div>
+        </div>
+
+        <div id="hint-display" class="hint-box">
+            <strong>Hint:</strong> <span id="hint-text"></span>
+        </div>
+
+        <div id="explanation-display" class="explanation-box">
+            <strong>Explanation:</strong> <span id="explanation-text"></span>
+        </div>
+
+        <div class="controls">
+            <button id="hint-btn" onclick="showHint()">💡 Show Hint</button>
+            <button id="next-btn" onclick="nextQuestion()" disabled>Next Question &rarr;</button>
+        </div>
+    </div>
+
+    <!-- RESULTS SCREEN -->
+    <div id="results-screen" class="hidden" style="text-align: center;">
+        <h1>Exam Complete!</h1>
+        <div class="summary-stat" id="final-score"></div>
+        <div id="feedback-msg"></div>
+        <div style="margin-top: 30px; text-align: left;">
+            <h3>Session Summary:</h3>
+            <ul id="topic-breakdown"></ul>
+        </div>
+        <button onclick="location.reload()">Take Another Exam</button>
+    </div>
+</div>
+
+<script>
+    // --- DATA BANK ---
+    const fullQuestionBank = [
+        // --- BATCH 1 (Core Concepts) ---
+        {
+            id: 1,
+            topic: "Security & Zero Trust",
+            question: "Your CEO is traveling and wants to ensure that even if their password is stolen, a bad actor cannot access their account from a different country. Which Zero Trust principle are you applying by requiring additional verification?",
+            options: ["Assume Breach", "Verify Explicitly", "Least Privilege", "Conditional Access"],
+            answer: 1, // B
+            hint: "Check all available data points (location, device) before trusting.",
+            explanation: "Verify explicitly means every request is authenticated and authorized based on all available data points."
+        },
+        {
+            id: 2,
+            topic: "Identity & Access",
+            question: "A temporary project team needs access to a specific SharePoint site for three months. Which Entra feature allows you to bundle these permissions and automatically revoke them?",
+            options: ["Dynamic Groups", "Privileged Identity Management (PIM)", "Access Packages (Entitlement Management)", "Security Groups"],
+            answer: 2, // C
+            hint: "Bundles resources into a 'Package' for a set time.",
+            explanation: "Access packages allow admins to group resources and assign them for a finite time."
+        },
+        {
+            id: 3,
+            topic: "Identity & Access",
+            question: "An administrator needs a one-time 'Global Administrator' elevation for two hours. Which tool should they use?",
+            options: ["Microsoft Purview", "Microsoft Entra ID Protection", "Privileged Identity Management (PIM)", "Microsoft 365 Admin Center"],
+            answer: 2, // C
+            hint: "Just-In-Time access.",
+            explanation: "PIM provides Just-In-Time (JIT) access to high-level roles."
+        },
+        {
+            id: 4,
+            topic: "Identity & Access",
+            question: "You want users in 'Marketing' to be automatically added to a group based on their department attribute. What should you create?",
+            options: ["A Dynamic Group", "A Distribution List", "A Mail-enabled Security Group", "An M365 Group"],
+            answer: 0, // A
+            hint: "Uses rules/queries to manage membership.",
+            explanation: "Dynamic groups use rules based on user attributes."
+        },
+        {
+            id: 5,
+            topic: "M365 Core Services",
+            question: "A manager wants a single email address that multiple employees can use to read and reply to customers. What should you create?",
+            options: ["A Distribution List", "A Shared Mailbox", "A Security Group", "An M365 Group"],
+            answer: 1, // B
+            hint: "Allows logging in or accessing to reply 'as' the address.",
+            explanation: "Shared mailboxes allow multiple users to respond 'as' that email address."
+        },
+        {
+            id: 6,
+            topic: "Copilot & AI",
+            question: "Copilot uses which technology to find specific meeting data within the user's M365 environment?",
+            options: ["Large Language Model training", "Semantic Index", "Bing Search", "Windows Search"],
+            answer: 1, // B
+            hint: "Sits on top of Microsoft Graph.",
+            explanation: "The Semantic Index maps natural language intent to Graph data."
+        },
+        {
+            id: 7,
+            topic: "Copilot & AI",
+            question: "Why will free Copilot Chat fail to summarize your latest work email?",
+            options: ["Needs AI training", "Free version lacks Graph access", "Boss needs to approve", "Wrong app"],
+            answer: 1, // B
+            hint: "Free versions access web data, not work data.",
+            explanation: "Free Copilot Chat cannot access 'Work' data (Graph) without a paid license."
+        },
+        {
+            id: 8,
+            topic: "Copilot & Agents",
+            question: "An agent runs automatically when an email arrives to assign tickets. This is an example of:",
+            options: ["Orchestrator", "Autonomous Agent", "Semantic Indexer", "RAG Model"],
+            answer: 1, // B
+            hint: "Runs on a trigger without human prompts.",
+            explanation: "Autonomous agents are triggered by events (like email) to perform tasks independently."
+        },
+        {
+            id: 9,
+            topic: "Copilot & AI",
+            question: "Does Microsoft use your private prompts to train global LLMs?",
+            options: ["Yes, for everyone", "Yes, for E5 users", "No, never", "Only if Public"],
+            answer: 2, // C
+            hint: "Privacy commitment regarding commercial data.",
+            explanation: "Microsoft explicitly states business data and prompts are NOT used to train base LLMs."
+        },
+        {
+            id: 10,
+            topic: "Purview & Data",
+            question: "Which feature labels documents as 'Secret' and encrypts them?",
+            options: ["DLP", "Sensitivity Labels", "Insider Risk", "Communication Compliance"],
+            answer: 1, // B
+            hint: "Classifies and protects the file.",
+            explanation: "Sensitivity labels classify and protect data with encryption/watermarks."
+        },
+        {
+            id: 11,
+            topic: "Purview & Data",
+            question: "Copilot is showing sensitive salary info to employees. What is the root cause?",
+            options: ["Copilot bypass", "Oversharing (Permissions)", "Corrupt Index", "Privacy Mode off"],
+            answer: 1, // B
+            hint: "Copilot sees what the user sees.",
+            explanation: "Copilot respects RBAC. If a user can see it in SharePoint, Copilot can see it."
+        },
+        {
+            id: 12,
+            topic: "Purview & Data",
+            question: "How do you prevent Copilot from EVER using a specific site's content for grounding?",
+            options: ["Delete site", "Restricted Content Discovery", "Public Label", "Litigation Hold"],
+            answer: 1, // B
+            hint: "Hides content from Semantic Index.",
+            explanation: "Restricted Content Discovery prevents the index from using the site."
+        },
+        {
+            id: 13,
+            topic: "Licensing",
+            question: "Which Copilot plan is for small businesses (max 300 users)?",
+            options: ["Enterprise Add-on", "Copilot Chat Free", "Business Plan", "Pay-as-you-go"],
+            answer: 2, // C
+            hint: "Named for SMBs.",
+            explanation: "The Copilot Business plan has a 300-user limit."
+        },
+        {
+            id: 14,
+            topic: "Licensing",
+            question: "Which billing method charges based on the number of prompts?",
+            options: ["Per User", "Pay-as-you-go (PGO)", "Credit Packs", "Annual"],
+            answer: 1, // B
+            hint: "Bills to Azure.",
+            explanation: "PGO bills against an Azure subscription based on usage."
+        },
+        {
+            id: 15,
+            topic: "Adoption",
+            question: "Which tool shows deep behavioral insight like 'meetings summarized'?",
+            options: ["Entra Reports", "Admin Usage Reports", "Viva Insights", "Sentinel"],
+            answer: 2, // C
+            hint: "Employee experience analytics.",
+            explanation: "Viva Insights provides advanced analytics on AI interaction trends."
+        },
+        {
+            id: 16,
+            topic: "Security",
+            question: "Prompting for Password + Face Scan + Compliant Device is an example of:",
+            options: ["Single policy", "Conditional Access", "Broken system", "Anonymous login"],
+            answer: 1, // B
+            hint: "Evaluating multiple signals.",
+            explanation: "Conditional Access combines signals to grant access."
+        },
+        {
+            id: 17,
+            topic: "Copilot & Agents",
+            question: "Which agent type plans complex multi-step workflows?",
+            options: ["Chatbot", "Autonomous Agent", "Graph", "Index"],
+            answer: 1, // B
+            hint: "Has reasoning capabilities.",
+            explanation: "Advanced/Autonomous agents reason and plan sequences."
+        },
+        {
+            id: 18,
+            topic: "Purview & Data",
+            question: "What is 'Adaptive Protection'?",
+            options: ["Password changer", "Dynamic DLP based on Insider Risk", "Home computer access", "Auto-licensing"],
+            answer: 1, // B
+            hint: "Combines Insider Risk + DLP.",
+            explanation: "Adaptive Protection integrates Insider Risk signals to apply stronger DLP controls dynamically."
+        },
+        {
+            id: 19,
+            topic: "Copilot & AI",
+            question: "The process of fetching company data to augment the LLM prompt is:",
+            options: ["Deep Learning", "RAG (Retrieval-Augmented Generation)", "Prompt Engineering", "Fine-tuning"],
+            answer: 1, // B
+            hint: "Retrieves to Augment.",
+            explanation: "RAG combines LLM with retrieved organizational data."
+        },
+        {
+            id: 20,
+            topic: "Security",
+            question: "Which key is phishing-resistant due to proximity requirements?",
+            options: ["SMS", "Passkey", "Password", "Security Question"],
+            answer: 1, // B
+            hint: "Bluetooth/NFC binding.",
+            explanation: "Passkeys require proximity and cryptographic binding."
+        },
+        // --- BATCH 2 (Expanded) ---
+        {
+            id: 51,
+            topic: "Security",
+            question: "A user logs in from London, then 5 minutes later from Tokyo. Which feature flags this 'Impossible Travel'?",
+            options: ["PIM", "Identity Protection", "Access Reviews", "Information Protection"],
+            answer: 1, // B
+            hint: "Analyzes sign-in risk signals.",
+            explanation: "Identity Protection analyzes signals like 'impossible travel' to determine sign-in risk."
+        },
+        {
+            id: 52,
+            topic: "Copilot & Agents",
+            question: "An agent needs to access data. Whose permissions does it typically use?",
+            options: ["Global Admin", "The User's (on-behalf-of)", "Shared Password", "Anonymous"],
+            answer: 1, // B
+            hint: "Inherits the chat user's access.",
+            explanation: "Copilots act on behalf of the user, inheriting their specific permissions."
+        },
+        {
+            id: 53,
+            topic: "M365 Admin",
+            question: "Where do you manage mail-enabled security groups?",
+            options: ["Entra Portal", "M365 Admin Center", "SharePoint Admin", "Azure Portal"],
+            answer: 1, // B
+            hint: "The central hub for M365 groups.",
+            explanation: "M365 admins typically manage mail-enabled groups in the M365 Admin Center."
+        },
+        {
+            id: 54,
+            topic: "Security",
+            question: "Giving everyone Global Admin rights violates which principle?",
+            options: ["Verify Explicitly", "Assume Breach", "Least Privilege", "Semantic Indexing"],
+            answer: 2, // C
+            hint: "Minimum access needed.",
+            explanation: "Least privilege means giving only the minimum access needed for a task."
+        },
+        {
+            id: 55,
+            topic: "Security",
+            question: "How do you enforce 'Terms of Use' acceptance before login?",
+            options: ["Sensitivity Label", "Conditional Access", "SharePoint Library", "Transport Rule"],
+            answer: 1, // B
+            hint: "Access policy requirement.",
+            explanation: "Conditional Access can require acceptance of Terms of Use (PDF) before granting access."
+        },
+        {
+            id: 56,
+            topic: "Security",
+            question: "A USB security key represents which MFA factor?",
+            options: ["Something you know", "Something you have", "Something you are", "Somewhere you are"],
+            answer: 1, // B
+            hint: "Physical object.",
+            explanation: "A physical key is 'something you have'."
+        },
+        {
+            id: 57,
+            topic: "Security",
+            question: "Where do you force a password change for High Risk users?",
+            options: ["PIM", "Identity Protection / Conditional Access", "Purview", "SAM"],
+            answer: 1, // B
+            hint: "Risk-based policy.",
+            explanation: "Risk-based policies in Conditional Access can trigger password changes."
+        },
+        {
+            id: 58,
+            topic: "Responsible AI",
+            question: "Ensuring actions are logged and reviewable relates to which AI principle?",
+            options: ["Fairness", "Accountability/Transparency", "Inclusiveness", "Grounding"],
+            answer: 1, // B
+            hint: "Auditability.",
+            explanation: "Accountability and Transparency focus on auditability and understanding usage."
+        },
+        {
+            id: 59,
+            topic: "Identity",
+            question: "What is a Hybrid Identity?",
+            options: ["Two passwords", "Synced from On-Prem AD to Entra", "Mac + Windows", "Two companies"],
+            answer: 1, // B
+            hint: "Connects local AD to Cloud.",
+            explanation: "Hybrid identities are synchronized from on-prem Active Directory to the cloud."
+        },
+        {
+            id: 60,
+            topic: "Security",
+            question: "Which tool checks for leaked credentials on the Dark Web?",
+            options: ["SharePoint", "Identity Protection", "Teams", "OneDrive"],
+            answer: 1, // B
+            hint: "Monitors identity risk.",
+            explanation: "Identity Protection monitors the dark web for leaked credentials."
+        },
+        {
+            id: 61,
+            topic: "Copilot & AI",
+            question: "If Copilot tries to summarize an encrypted PDF you don't have rights to, what happens?",
+            options: ["Decrypts it", "Refuses access", "Asks manager", "Summarizes title only"],
+            answer: 1, // B
+            hint: "Respects permissions/IRM.",
+            explanation: "Copilot respects sensitivity labels and Information Rights Management (IRM)."
+        },
+        {
+            id: 62,
+            topic: "Copilot & Agents",
+            question: "Max knowledge sources for a custom agent?",
+            options: ["1", "5", "20", "Unlimited"],
+            answer: 2, // C
+            hint: "Currently capped at this number.",
+            explanation: "You can add up to 20 different knowledge sources to an agent."
+        },
+        {
+            id: 63,
+            topic: "Copilot & Agents",
+            question: "Which agent type plans sequences to achieve a goal?",
+            options: ["Basic Chatbot", "Autonomous Agent", "Graph", "Index"],
+            answer: 1, // B
+            hint: "Can act on its own.",
+            explanation: "Advanced agents can reason and plan multi-step sequences autonomously."
+        },
+        {
+            id: 64,
+            topic: "Copilot & Agents",
+            question: "Tool for 'Pro-code' agent building with Python?",
+            options: ["Copilot Studio", "VS Code / Foundry", "Admin Center", "Word"],
+            answer: 1, // B
+            hint: "Developer environment.",
+            explanation: "VS Code is used for 'pro-code' agent development."
+        },
+        {
+            id: 65,
+            topic: "Copilot & AI",
+            question: "What is a System Prompt?",
+            options: ["User typing instructions", "Instructions to the AI on tone/role", "Memory clear", "Billing trigger"],
+            answer: 1, // B
+            hint: "Hidden instructions guiding behavior.",
+            explanation: "System prompts guide the behavior and boundaries of the AI model."
+        },
+        {
+            id: 66,
+            topic: "Copilot & AI",
+            question: "Grounding means:",
+            options: ["No internet", "Using verifiable data (Graph) for answers", "Turned off", "Trained on public data"],
+            answer: 1, // B
+            hint: "Anchoring the AI in reality.",
+            explanation: "Grounding provides context to the model so it doesn't just guess."
+        },
+        {
+            id: 67,
+            topic: "Purview & Data",
+            question: "Tool to detect 'Shadow AI' usage?",
+            options: ["Viva Insights", "DSPM for AI", "Exchange", "SharePoint"],
+            answer: 1, // B
+            hint: "Data Security Posture Management.",
+            explanation: "Purview DSPM for AI helps detect non-corporate AI tool usage."
+        },
+        {
+            id: 68,
+            topic: "Responsible AI",
+            question: "Showing users where the source data came from is:",
+            options: ["Fairness", "Transparency", "Security", "Reliability"],
+            answer: 1, // B
+            hint: "Being clear about sources.",
+            explanation: "Transparency involves showing sources and how decisions were made."
+        },
+        {
+            id: 69,
+            topic: "Copilot & Agents",
+            question: "Where is the 'Test' window in Copilot Studio?",
+            options: ["Left menu", "SharePoint", "Right side", "Outlook"],
+            answer: 2, // C
+            hint: "Immediate feedback pane.",
+            explanation: "The test pane is typically on the right side of the workspace."
+        },
+        {
+            id: 70,
+            topic: "Copilot & Agents",
+            question: "Protocol for AI to talk to legacy databases/tools?",
+            options: ["Index", "Model Context Protocol (MCP)", "Word", "Bing"],
+            answer: 1, // B
+            hint: "Standardized connection.",
+            explanation: "Connectors and protocols like MCP allow AI to interact with external tools."
+        },
+        {
+            id: 71,
+            topic: "Purview & Data",
+            question: "Tool to delete Drafts after 7 years?",
+            options: ["DLP", "Data Life Cycle (Retention)", "Insider Risk", "Information Protection"],
+            answer: 1, // B
+            hint: "Managing the life of data.",
+            explanation: "Data Life Cycle Management handles retention and deletion."
+        },
+        {
+            id: 72,
+            topic: "Purview & Data",
+            question: "Tool to monitor for offensive language in Teams?",
+            options: ["Information Protection", "Communication Compliance", "DLP", "Exchange Admin"],
+            answer: 1, // B
+            hint: "Checking communication standards.",
+            explanation: "Communication Compliance monitors for policy violations in chats."
+        },
+        {
+            id: 73,
+            topic: "Purview & Data",
+            question: "Tool to find all SSNs in the company?",
+            options: ["Content Search / Data Explorer", "Usage Reports", "Viva Insights", "Entra"],
+            answer: 0, // A
+            hint: "Exploring content.",
+            explanation: "Content search and Data Explorer help locate sensitive information."
+        },
+        {
+            id: 74,
+            topic: "Purview & Data",
+            question: "Adaptive Protection works by:",
+            options: ["Changing passwords", "Heightening DLP based on Insider Risk", "Home access", "Buying licenses"],
+            answer: 1, // B
+            hint: "Dynamic rules.",
+            explanation: "Adaptive Protection links Insider Risk levels to DLP enforcement."
+        },
+        {
+            id: 75,
+            topic: "Purview & Data",
+            question: "How to watermark 'Internal' documents?",
+            options: ["Word settings", "Sensitivity Label", "Site settings", "Admin Center"],
+            answer: 1, // B
+            hint: "Label-based marking.",
+            explanation: "Sensitivity labels can mandate content marking like watermarks."
+        },
+        {
+            id: 76,
+            topic: "Purview & Data",
+            question: "Purview capability specifically for AI governance?",
+            options: ["eDiscovery", "DSPM for AI", "Records Management", "Audit"],
+            answer: 1, // B
+            hint: "Security Posture for AI.",
+            explanation: "DSPM for AI is the specific suite for governing AI's data use."
+        },
+        {
+            id: 77,
+            topic: "Purview & Data",
+            question: "Restrict Copilot to only 50 specific sites?",
+            options: ["Global Admin", "Restricted SharePoint Search", "Sentinel", "Delete sites"],
+            answer: 1, // B
+            hint: "Positive list (Allow list) for Search.",
+            explanation: "Restricted SharePoint Search limits Copilot to a specific set of sites (max 100)."
+        },
+        {
+            id: 78,
+            topic: "Purview & Data",
+            question: "Can Purview identify 'Legal Contracts' without specific keywords?",
+            options: ["No", "Yes, Trainable Classifiers", "English only", "Manual only"],
+            answer: 1, // B
+            hint: "Machine Learning models.",
+            explanation: "Trainable classifiers use AI/ML to identify document categories."
+        },
+        {
+            id: 79,
+            topic: "Responsible AI",
+            question: "AI accessible to people with disabilities refers to:",
+            options: ["Fairness", "Inclusiveness", "Transparency", "Security"],
+            answer: 1, // B
+            hint: "Everyone included.",
+            explanation: "Inclusiveness focuses on making AI accessible to all."
+        },
+        {
+            id: 80,
+            topic: "Purview & Data",
+            question: "Where to see why a document was classified Confidential?",
+            options: ["OneDrive", "Data Explorer / Activity Explorer", "Entra Logs", "Ask user"],
+            answer: 1, // B
+            hint: "Deep dive into classification.",
+            explanation: "Purview tools show the source data and logic for classifications."
+        },
+        // --- BATCH 3 (Deep Dive) ---
+        {
+            id: 81,
+            topic: "Licensing",
+            question: "Does 'Enterprise Add-on' include Purview labels automatically?",
+            options: ["Yes", "No, requires base license (E3/E5)", "CEO only", "PGO only"],
+            answer: 1, // B
+            hint: "Add-ons sit on top of base licenses.",
+            explanation: "Copilot licenses typically require a base license which provides the underlying Purview capabilities."
+        },
+        {
+            id: 82,
+            topic: "Licensing",
+            question: "Copilot Studio Credit Packs are for:",
+            options: ["Storage", "Agent usage/execution", "Email accounts", "Discounts"],
+            answer: 1, // B
+            hint: "Paying for the compute.",
+            explanation: "Copilot Studio usage can be billed via credit packs or PGO."
+        },
+        {
+            id: 83,
+            topic: "Copilot & AI",
+            question: "Tweaking Copilot behavior at tenant level is:",
+            options: ["Grounding", "Copilot Tuning", "RAG", "Prompt Engineering"],
+            answer: 1, // B
+            hint: "Fine-tuning settings.",
+            explanation: "Copilot tuning allows for some tenant-level customization."
+        },
+        {
+            id: 84,
+            topic: "Adoption",
+            question: "Where to see Active User count for Copilot?",
+            options: ["Entra", "M365 Admin Usage Reports", "Teams", "Azure"],
+            answer: 1, // B
+            hint: "Standard reporting location.",
+            explanation: "Usage reports in the M365 Admin center show active user counts."
+        },
+        {
+            id: 85,
+            topic: "Licensing",
+            question: "Where to see PGO costs?",
+            options: ["M365 Admin", "Azure Cost Management", "Purview", "Studio"],
+            answer: 1, // B
+            hint: "Bills to Subscription.",
+            explanation: "PGO costs are tracked in the Azure portal."
+        },
+        {
+            id: 86,
+            topic: "Licensing",
+            question: "Can you assign Copilot licenses to Security Groups?",
+            options: ["No", "Yes, Group-based licensing", "Mail-enabled only", "<10 people only"],
+            answer: 1, // B
+            hint: "Scalable assignment.",
+            explanation: "Group-based licensing works with Security groups."
+        },
+        {
+            id: 87,
+            topic: "Copilot & Agents",
+            question: "Why is the 'Researcher' agent missing for a user?",
+            options: ["Agent disabled in Admin Center", "Internet speed", "Computer off", "Department"],
+            answer: 0, // A
+            hint: "Check the registry.",
+            explanation: "Admins must enable specific agents in the Agent Registry."
+        },
+        {
+            id: 88,
+            topic: "Security",
+            question: "Service providing 'Threat Intelligence' reports?",
+            options: ["SharePoint", "Defender Threat Analytics", "OneDrive", "Exchange"],
+            answer: 1, // B
+            hint: "Expert research reports.",
+            explanation: "Threat Analytics in Defender provides researcher-led intel."
+        },
+        {
+            id: 89,
+            topic: "M365 Admin",
+            question: "Where to append a disclaimer to emails?",
+            options: ["Outlook", "Exchange Transport Rules", "Entra", "Purview"],
+            answer: 1, // B
+            hint: "In-transit modification.",
+            explanation: "Transport rules can append disclaimers to emails."
+        },
+        {
+            id: 90,
+            topic: "Adoption",
+            question: "Tool to see if Copilot saves time in meetings?",
+            options: ["Entra", "Viva Insights", "Sign-in reports", "Storage reports"],
+            answer: 1, // B
+            hint: "Productivity analytics.",
+            explanation: "Viva Insights provides metrics on time saved and meeting summaries."
+        },
+        {
+            id: 101,
+            topic: "Security",
+            question: "Analyzing signals like location/device before access is which Zero Trust principle?",
+            options: ["Assume Breach", "Least Privilege", "Verify Explicitly", "Just-in-Time"],
+            answer: 2, // C
+            hint: "Explicit verification.",
+            explanation: "Verify explicitly ensures every request is authenticated based on signals."
+        },
+        {
+            id: 102,
+            topic: "Identity",
+            question: "Syncing password hash to cloud to avoid On-Prem dependency?",
+            options: ["PTA", "Federation", "Password Hash Sync (PHS)", "SSO"],
+            answer: 2, // C
+            hint: "Hash of a hash.",
+            explanation: "PHS syncs a hash to the cloud, removing on-prem dependency."
+        },
+        {
+            id: 103,
+            topic: "M365 Admin",
+            question: "Best group for shared calendar + docs?",
+            options: ["Security Group", "Distribution List", "M365 Group", "Dynamic Group"],
+            answer: 2, // C
+            hint: "Collaboration focus.",
+            explanation: "M365 groups provide mailbox, calendar, and library."
+        },
+        {
+            id: 104,
+            topic: "Security",
+            question: "Where to adjust MFA prompt frequency?",
+            options: ["Purview", "Conditional Access Session Controls", "SharePoint", "Billing"],
+            answer: 1, // B
+            hint: "Session management.",
+            explanation: "Conditional Access Session controls manage sign-in frequency."
+        },
+        {
+            id: 105,
+            topic: "M365 Admin",
+            question: "Role to add custom domains?",
+            options: ["SharePoint Admin", "Exchange Admin", "Global Admin", "Compliance Admin"],
+            answer: 2, // C
+            hint: "Tenant-level setting.",
+            explanation: "Global Admin has full access to domain management."
+        },
+        {
+            id: 106,
+            topic: "Identity",
+            question: "Automating group membership by Job Title?",
+            options: ["Access Package", "Static Group", "Dynamic Group", "PIM"],
+            answer: 2, // C
+            hint: "Rule-based.",
+            explanation: "Dynamic groups use rules to manage membership."
+        },
+        {
+            id: 107,
+            topic: "Identity",
+            question: "Using Gov ID to reset credentials/identity proofing?",
+            options: ["SSPR", "Verified ID", "Conditional Access", "PTA"],
+            answer: 1, // B
+            hint: "Decentralized wallet.",
+            explanation: "Verified ID allows high-assurance identity proofing."
+        },
+        {
+            id: 108,
+            topic: "Security",
+            question: "Which method is Phishing-Resistant?",
+            options: ["Password", "SMS", "Passkey", "Questions"],
+            answer: 2, // C
+            hint: "Proximity required.",
+            explanation: "Passkeys are phishing-resistant due to domain binding and proximity."
+        },
+        {
+            id: 109,
+            topic: "Identity",
+            question: "Admin permissions for only 4 hours?",
+            options: ["Entra Protection", "PIM", "Purview", "Sentinel"],
+            answer: 1, // B
+            hint: "Privileged Identity Management.",
+            explanation: "PIM enables Just-In-Time access."
+        },
+        {
+            id: 110,
+            topic: "Identity",
+            question: "Where to find 'Identity Score'?",
+            options: ["M365 Admin", "Entra Portal", "Purview", "Teams"],
+            answer: 1, // B
+            hint: "Identity hub.",
+            explanation: "Entra portal displays the Identity Score."
+        },
+        {
+            id: 111,
+            topic: "Copilot & AI",
+            question: "What provides context of the specific file to Copilot?",
+            options: ["LLM", "Bing", "Orchestrator", "Graph"],
+            answer: 2, // C
+            hint: "Manages the request flow.",
+            explanation: "The Orchestrator gathers context from the app and data."
+        },
+        {
+            id: 112,
+            topic: "Copilot & Agents",
+            question: "Where to add a public website for Agent to use?",
+            options: ["Instructions", "Knowledge", "Prompts", "Triggers"],
+            answer: 1, // B
+            hint: "Source data.",
+            explanation: "Knowledge section allows adding websites/files."
+        },
+        {
+            id: 113,
+            topic: "Copilot & Agents",
+            question: "Agent triggered by file upload is:",
+            options: ["Assistant", "Autonomous Agent", "Prompt", "Orchestrator"],
+            answer: 1, // B
+            hint: "Event-driven.",
+            explanation: "Autonomous agents run on triggers."
+        },
+        {
+            id: 114,
+            topic: "Copilot & Agents",
+            question: "Agent optimized for complex data analysis?",
+            options: ["Writing Coach", "Researcher", "Analyst", "Prompt Coach"],
+            answer: 2, // C
+            hint: "Data Scientist persona.",
+            explanation: "The Analyst agent works with complex datasets."
+        },
+        {
+            id: 115,
+            topic: "Copilot & Agents",
+            question: "Platform for Pro-code agent development?",
+            options: ["Chat", "Studio", "Foundry/VS Code", "SharePoint"],
+            answer: 2, // C
+            hint: "Developer tools.",
+            explanation: "Foundry and VS Code are for pro-code."
+        },
+        {
+            id: 116,
+            topic: "Copilot & AI",
+            question: "Semantic Index purpose?",
+            options: ["Encrypt data", "Map natural language to Graph data", "Track logins", "List apps"],
+            answer: 1, // B
+            hint: "Understanding intent.",
+            explanation: "Semantic Index maps natural language to relevant content."
+        },
+        {
+            id: 117,
+            topic: "Copilot & AI",
+            question: "Is data used to train global LLMs?",
+            options: ["Yes", "No", "Free version only", "For 30 days"],
+            answer: 1, // B
+            hint: "Commercial privacy.",
+            explanation: "Business data is NOT used to train global models."
+        },
+        {
+            id: 118,
+            topic: "Copilot & AI",
+            question: "Protocol for AI to talk to tools?",
+            options: ["HTTP", "MCP (Model Context Protocol)", "SMTP", "Graph"],
+            answer: 1, // B
+            hint: "Standard connection.",
+            explanation: "MCP allows AI to connect to tools."
+        },
+        {
+            id: 119,
+            topic: "Copilot & Agents",
+            question: "Where to fix Agent 'personality'?",
+            options: ["Knowledge", "Instructions", "Trigger", "Deployment"],
+            answer: 1, // B
+            hint: "Behavior guidelines.",
+            explanation: "Instructions define tone and rules."
+        },
+        {
+            id: 120,
+            topic: "Copilot & AI",
+            question: "Feature to save complex commands?",
+            options: ["Index", "Saved Prompts", "RAG", "Knowledge"],
+            answer: 1, // B
+            hint: "Reusable library.",
+            explanation: "Users can save prompts for future use."
+        },
+        {
+            id: 121,
+            topic: "Purview & Data",
+            question: "Stop sharing 'Internal Only' files externally?",
+            options: ["Entra", "DLP", "Teams", "SharePoint"],
+            answer: 1, // B
+            hint: "Loss Prevention.",
+            explanation: "DLP blocks sharing of sensitive data."
+        },
+        {
+            id: 122,
+            topic: "Purview & Data",
+            question: "Identify document types without keywords (AI)?",
+            options: ["Manual Label", "Trainable Classifiers", "Retention", "Compliance"],
+            answer: 1, // B
+            hint: "Learns from examples.",
+            explanation: "Trainable classifiers use AI to recognize document types."
+        },
+        {
+            id: 123,
+            topic: "Purview & Data",
+            question: "Tool for GDPR checklist and score?",
+            options: ["Data Explorer", "Compliance Manager", "Activity Explorer", "Insider Risk"],
+            answer: 1, // B
+            hint: "Managing compliance.",
+            explanation: "Compliance Manager provides scores and controls."
+        },
+        {
+            id: 124,
+            topic: "Purview & Data",
+            question: "Prevent Copilot from using Highly Confidential data?",
+            options: ["SharePoint Settings", "DLP policies targeting Copilot", "Conditional Access", "Billing"],
+            answer: 1, // B
+            hint: "DLP scope.",
+            explanation: "DLP can target Copilot to prevent reasoning over sensitive data."
+        },
+        {
+            id: 125,
+            topic: "Purview & Data",
+            question: "Find all SSNs for legal request?",
+            options: ["Labels", "Content Search / eDiscovery", "Viva", "Sentinel"],
+            answer: 1, // B
+            hint: "Legal search.",
+            explanation: "eDiscovery locates data for legal needs."
+        },
+        {
+            id: 126,
+            topic: "Responsible AI",
+            question: "AI not excluding people based on ability?",
+            options: ["Fairness", "Inclusiveness", "Transparency", "Privacy"],
+            answer: 1, // B
+            hint: "Accessibility.",
+            explanation: "Inclusiveness ensures AI empowers everyone."
+        },
+        {
+            id: 127,
+            topic: "Purview & Data",
+            question: "Monitor Teams for offensive language?",
+            options: ["Insider Risk", "Communication Compliance", "Protection", "Life Cycle"],
+            answer: 1, // B
+            hint: "Checking chat standards.",
+            explanation: "Communication Compliance checks for policy violations in chats."
+        },
+        {
+            id: 128,
+            topic: "Purview & Data",
+            question: "Function of Sensitivity Labels?",
+            options: ["Delete", "Classify & Protect", "Track usage", "Passwords"],
+            answer: 1, // B
+            hint: "Encryption/Watermarking.",
+            explanation: "Labels classify and protect data."
+        },
+        {
+            id: 129,
+            topic: "Purview & Data",
+            question: "Detect mass copying to personal cloud?",
+            options: ["Communication Compliance", "Insider Risk Management", "Search", "Compliance Manager"],
+            answer: 1, // B
+            hint: "Suspicious internal behavior.",
+            explanation: "Insider Risk Management detects unusual exfiltration."
+        },
+        {
+            id: 130,
+            topic: "Purview & Data",
+            question: "Report for Overshared SharePoint sites?",
+            options: ["Teams Admin", "SharePoint Advanced Management (SAM)", "Entra", "Viva"],
+            answer: 1, // B
+            hint: "Oversharing report.",
+            explanation: "SAM provides permission/oversharing reports."
+        },
+        {
+            id: 131,
+            topic: "Licensing",
+            question: "Most predictable billing model?",
+            options: ["PGO", "Per User Per Month", "Credits", "Individual"],
+            answer: 1, // B
+            hint: "Flat fee.",
+            explanation: "Per user licensing is predictable."
+        },
+        {
+            id: 132,
+            topic: "Licensing",
+            question: "Where to set PGO budget alerts?",
+            options: ["M365 Admin", "Azure Cost Management", "Purview", "Viva"],
+            answer: 1, // B
+            hint: "Azure billing.",
+            explanation: "PGO bills to Azure, so use Azure budgets."
+        },
+        {
+            id: 133,
+            topic: "Adoption",
+            question: "Deepest analytics on Copilot productivity?",
+            options: ["Usage Reports", "Viva Insights", "Sign-in logs", "Sentinel"],
+            answer: 1, // B
+            hint: "Employee impact.",
+            explanation: "Viva Insights provides deep behavioral metrics."
+        },
+        {
+            id: 134,
+            topic: "Licensing",
+            question: "Where to see Unassigned licenses?",
+            options: ["Azure", "M365 Admin > Billing > Licenses", "Purview", "Studio"],
+            answer: 1, // B
+            hint: "Inventory.",
+            explanation: "Billing section shows license counts."
+        },
+        {
+            id: 135,
+            topic: "Adoption",
+            question: "First step for adoption?",
+            options: ["Enable all", "Pilot group", "Disable security", "Stop SharePoint"],
+            answer: 1, // B
+            hint: "Small start.",
+            explanation: "Start with a pilot group."
+        },
+        {
+            id: 136,
+            topic: "Licensing",
+            question: "Can Copilot Studio use PGO?",
+            options: ["No", "Yes", "E5 Only", "Mobile only"],
+            answer: 1, // B
+            hint: "Azure backed.",
+            explanation: "Studio supports Pay-as-you-go via Azure."
+        },
+        {
+            id: 137,
+            topic: "M365 Admin",
+            question: "Role for assigning licenses?",
+            options: ["SharePoint Admin", "Global/Billing Admin", "Compliance Admin", "Helpdesk"],
+            answer: 1, // B
+            hint: "Money and users.",
+            explanation: "Billing or Global admins handle licenses."
+        },
+        {
+            id: 138,
+            topic: "Security",
+            question: "Factor allowing home usage on work account?",
+            options: ["Internet", "Conditional Access", "File size", "LinkedIn"],
+            answer: 1, // B
+            hint: "Access policy.",
+            explanation: "Conditional Access controls where/how you can log in."
+        },
+        {
+            id: 139,
+            topic: "Adoption",
+            question: "Tool to track usage trends of early adopters?",
+            options: ["Explorer", "Viva Insights", "Domains", "Logs"],
+            answer: 1, // B
+            hint: "Long term trends.",
+            explanation: "Viva Insights tracks adoption trends."
+        },
+        {
+            id: 140,
+            topic: "Adoption",
+            question: "Where to manage Agent Registry?",
+            options: ["SharePoint", "M365 Admin Center", "Entra", "Exchange"],
+            answer: 1, // B
+            hint: "Central app governance.",
+            explanation: "Agent registry is in M365 Admin Center."
+        },
+        {
+            id: 141,
+            topic: "Purview & Data",
+            question: "Why is 'Security by Obscurity' (hiding folders) bad for Copilot?",
+            options: ["Deletes folders", "Semantic Index finds them via search", "Only top folder works", "Admins can't see"],
+            answer: 1, // B
+            hint: "AI finds everything you have access to.",
+            explanation: "Copilot finds anything the user has permission to, even if hidden."
+        },
+        {
+            id: 142,
+            topic: "Copilot & Agents",
+            question: "Where to set Agent tone?",
+            options: ["Knowledge", "Instructions", "Trigger", "Key"],
+            answer: 1, // B
+            hint: "System prompt area.",
+            explanation: "Instructions define behavior and tone."
+        },
+        {
+            id: 143,
+            topic: "Security",
+            question: "Check risk for 'Anonymous IP' login?",
+            options: ["Purview", "Identity Protection", "SAM", "Teams"],
+            answer: 1, // B
+            hint: "Sign-in risk.",
+            explanation: "Identity Protection detects anonymous IPs."
+        },
+        {
+            id: 144,
+            topic: "Purview & Data",
+            question: "Keep emails for 10 years then delete?",
+            options: ["Labels", "Data Life Cycle (Retention)", "Insider Risk", "Compliance"],
+            answer: 1, // B
+            hint: "Time-based policy.",
+            explanation: "Retention policies handle keep/delete cycles."
+        },
+        {
+            id: 145,
+            topic: "M365 Core Services",
+            question: "What is Microsoft Graph?",
+            options: ["Chart tool", "Gateway to all M365 data", "Social network", "Encryption"],
+            answer: 1, // B
+            hint: "The API.",
+            explanation: "Graph is the unified API for M365 data."
+        },
+        {
+            id: 146,
+            topic: "Security",
+            question: "Principle assuming network is compromised?",
+            options: ["Verify Explicitly", "Least Privilege", "Assume Breach", "JIT"],
+            answer: 2, // C
+            hint: "Don't trust the perimeter.",
+            explanation: "Assume Breach focuses on minimizing blast radius."
+        },
+        {
+            id: 147,
+            topic: "Security",
+            question: "PIN + Face Scan uses which factors?",
+            options: ["Know + Have", "Know + Are", "Have + Are", "Where + Have"],
+            answer: 1, // B
+            hint: "Memory + Biometric.",
+            explanation: "PIN (Know) + Face (Are)."
+        },
+        {
+            id: 148,
+            topic: "Licensing",
+            question: "Tool to see AI spend by department (PGO)?",
+            options: ["M365 Admin", "Azure Cost Management", "Viva", "Purview"],
+            answer: 1, // B
+            hint: "Cost analysis.",
+            explanation: "Azure Cost Management provides granular billing details."
+        },
+        {
+            id: 149,
+            topic: "Purview & Data",
+            question: "Restrict Copilot to ONE specific handbook site?",
+            options: ["Global Admin", "Restricted SharePoint Search", "Labels", "Delete others"],
+            answer: 1, // B
+            hint: "Allow list.",
+            explanation: "Restricted SharePoint Search limits scope to specific sites."
+        },
+        {
+            id: 150,
+            topic: "Purview & Data",
+            question: "Timeline of AI Prompts?",
+            options: ["Compliance", "DSPM for AI (Activity Explorer)", "Insider Risk", "Retention"],
+            answer: 1, // B
+            hint: "Audit history.",
+            explanation: "Activity Explorer in DSPM shows prompt history."
+        },
+        {
+            id: 151,
+            topic: "M365 Admin",
+            question: "Prevent accidental deletion of CEO mailbox?",
+            options: ["Transport Rule", "Litigation Hold", "Anti-spam", "Domain"],
+            answer: 1, // B
+            hint: "Legal freeze.",
+            explanation: "Litigation Hold prevents deletion."
+        },
+        {
+            id: 152,
+            topic: "Responsible AI",
+            question: "Component preventing offensive responses?",
+            options: ["Index", "Content Safety", "Graph", "RAG"],
+            answer: 1, // B
+            hint: "Filter.",
+            explanation: "Content Safety filters block harmful content."
+        },
+        {
+            id: 153,
+            topic: "Copilot & AI",
+            question: "App to summarize emails?",
+            options: ["Excel", "Outlook", "Word", "SharePoint"],
+            answer: 1, // B
+            hint: "Mail app.",
+            explanation: "Outlook is the interface for email Copilot."
+        },
+        {
+            id: 154,
+            topic: "Security",
+            question: "What happens when JIT access expires?",
+            options: ["Keep forever", "Account deleted", "Permissions revoked", "Pay"],
+            answer: 2, // C
+            hint: "Temporary.",
+            explanation: "Access is automatically revoked after the window."
+        },
+        {
+            id: 155,
+            topic: "Security",
+            question: "Check if too many Global Admins exist?",
+            options: ["SharePoint", "Entra Secure Score", "OneDrive", "Teams"],
+            answer: 1, // B
+            hint: "Best practice check.",
+            explanation: "Secure Score recommends reducing Global Admins."
+        },
+        {
+            id: 156,
+            topic: "M365 Admin",
+            question: "Append disclaimer to emails?",
+            options: ["Outlook", "Exchange Transport Rules", "Billing", "Labels"],
+            answer: 1, // B
+            hint: "Mail flow.",
+            explanation: "Transport rules modify mail in transit."
+        },
+        {
+            id: 157,
+            topic: "Responsible AI",
+            question: "Humans responsible for AI outcomes?",
+            options: ["Fairness", "Transparency", "Accountability", "Reliability"],
+            answer: 2, // C
+            hint: "The buck stops here.",
+            explanation: "Accountability means humans are responsible."
+        },
+        {
+            id: 158,
+            topic: "Copilot & Agents",
+            question: "No-code tool for building agents?",
+            options: ["VS Code", "Foundry", "Copilot Studio", "PowerShell"],
+            answer: 2, // C
+            hint: "Low code.",
+            explanation: "Copilot Studio is the low-code builder."
+        },
+        {
+            id: 159,
+            topic: "Copilot & Agents",
+            question: "Max file size for Knowledge upload?",
+            options: ["10 MB", "512 MB", "1 GB", "Unlimited"],
+            answer: 1, // B
+            hint: "Half a gig.",
+            explanation: "512 MB is the current limit."
+        },
+        {
+            id: 160,
+            topic: "Purview & Data",
+            question: "Locate Credit Card numbers?",
+            options: ["Viva", "Data Explorer", "Entra", "Teams"],
+            answer: 1, // B
+            hint: "Explorer.",
+            explanation: "Data Explorer visualizes sensitive data locations."
+        },
+        // --- BATCH 4 (New Additions 161-260) ---
+        {
+            id: 161,
+            topic: "Identity",
+            question: "Which Entra feature allows you to collaborate with external users without creating full accounts in your tenant?",
+            options: ["B2B Collaboration", "B2C", "Hybrid Sync", "Conditional Access"],
+            answer: 0, // A
+            hint: "Business to Business.",
+            explanation: "B2B Collaboration allows you to invite guest users with their own credentials."
+        },
+        {
+            id: 162,
+            topic: "Purview & Data",
+            question: "What is the key difference between 'Compliance Score' and 'Secure Score'?",
+            options: ["Compliance is for Regulatory standards, Secure is for security posture", "Secure is for emails only", "Compliance is for Teams only", "They are the same"],
+            answer: 0, // A
+            hint: "Regulations vs Security configs.",
+            explanation: "Compliance Score tracks regulatory adherence (GDPR, etc.), while Secure Score tracks security configurations."
+        },
+        {
+            id: 163,
+            topic: "M365 Admin",
+            question: "Which dashboard shows if Exchange Online is experiencing a service outage?",
+            options: ["Message Center", "Service Health Dashboard", "Security Center", "Viva Insights"],
+            answer: 1, // B
+            hint: "Health status.",
+            explanation: "Service Health Dashboard provides real-time status of M365 services."
+        },
+        {
+            id: 164,
+            topic: "Copilot & AI",
+            question: "To use Copilot in Excel, where must your file be stored?",
+            options: ["Local Hard Drive", "OneDrive or SharePoint (AutoSave on)", "USB Drive", "Email attachment"],
+            answer: 1, // B
+            hint: "Cloud storage required.",
+            explanation: "Copilot in Excel requires the file to be in OneDrive/SharePoint with AutoSave enabled."
+        },
+        {
+            id: 165,
+            topic: "Security",
+            question: "Which Defender product protects endpoints (laptops/mobiles) from malware?",
+            options: ["Defender for Office 365", "Defender for Endpoint", "Defender for Identity", "Defender for Cloud Apps"],
+            answer: 1, // B
+            hint: "Endpoint protection.",
+            explanation: "Defender for Endpoint is the EDR/EPP solution for devices."
+        },
+        {
+            id: 166,
+            topic: "Copilot & Agents",
+            question: "What is a 'Declarative Agent'?",
+            options: ["An agent built with code", "An agent defined by instructions and knowledge without custom code", "A manual agent", "A billing agent"],
+            answer: 1, // B
+            hint: "Declaring intent without coding.",
+            explanation: "Declarative agents use natural language instructions and data grounding without requiring compiled code."
+        },
+        {
+            id: 167,
+            topic: "Purview & Data",
+            question: "Which retention setting ensures data is kept but allows users to edit the current version?",
+            options: ["Lock", "Preservation Hold Library", "Delete only", "Archive"],
+            answer: 1, // B
+            hint: "SharePoint mechanism.",
+            explanation: "When content is edited, the original version is preserved in the Preservation Hold Library."
+        },
+        {
+            id: 168,
+            topic: "Identity",
+            question: "What is 'Entra Permissions Management' used for?",
+            options: ["Managing CIEM (Cloud Infrastructure Entitlement Management)", "Resetting passwords", "Managing licenses", "Blocking emails"],
+            answer: 0, // A
+            hint: "Multi-cloud permissions.",
+            explanation: "Entra Permissions Management is a CIEM solution for managing permissions across Azure, AWS, and GCP."
+        },
+        {
+            id: 169,
+            topic: "Copilot & AI",
+            question: "Which Microsoft app is designed for 'Video' storage and transcription used by Copilot?",
+            options: ["Stream", "Word", "Planner", "Viva"],
+            answer: 0, // A
+            hint: "Video platform.",
+            explanation: "Microsoft Stream hosts videos and transcripts that Copilot can reason over."
+        },
+        {
+            id: 170,
+            topic: "M365 Admin",
+            question: "Where do you find announcements about upcoming features and changes?",
+            options: ["Service Health", "Message Center", "Billing", "Entra"],
+            answer: 1, // B
+            hint: "News feed.",
+            explanation: "The Message Center lists upcoming changes, updates, and maintenance."
+        },
+        {
+            id: 171,
+            topic: "Security",
+            question: "What does 'Defender for Cloud Apps' primarily help with?",
+            options: ["Antivirus", "Shadow IT and CASB", "Phishing", "Spam"],
+            answer: 1, // B
+            hint: "Cloud Access Security Broker.",
+            explanation: "Defender for Cloud Apps is a CASB that detects Shadow IT and controls cloud app access."
+        },
+        {
+            id: 172,
+            topic: "Identity",
+            question: "What is a 'Temporary Access Pass' (TAP)?",
+            options: ["A 1-hour internet pass", "A time-limited passcode to onboard users to passwordless methods", "A guest invite", "A license"],
+            answer: 1, // B
+            hint: "Bootstrap credential.",
+            explanation: "TAP is a short-lived passcode used to set up strong auth methods like FIDO2 or Authenticator."
+        },
+        {
+            id: 173,
+            topic: "Purview & Data",
+            question: "Which solution helps manage 'Privacy Risks' like overexposed personal data?",
+            options: ["Microsoft Priva", "Sentinel", "Intune", "Exchange"],
+            answer: 0, // A
+            hint: "Privacy management.",
+            explanation: "Microsoft Priva is the suite dedicated to privacy risk management."
+        },
+        {
+            id: 174,
+            topic: "Copilot & Agents",
+            question: "Can Copilot Studio agents be published to Microsoft Teams?",
+            options: ["No", "Yes", "Only via email", "Only to admins"],
+            answer: 1, // B
+            hint: "Channel support.",
+            explanation: "Agents can be published to multiple channels, including Teams and websites."
+        },
+        {
+            id: 175,
+            topic: "M365 Admin",
+            question: "Which tool allows you to automate workflows between apps (e.g., Save email attachment to SharePoint)?",
+            options: ["Power Automate", "Power BI", "Power Apps", "Excel"],
+            answer: 0, // A
+            hint: "Automation flow.",
+            explanation: "Power Automate is the workflow automation tool in the Power Platform."
+        },
+        {
+            id: 176,
+            topic: "Security",
+            question: "What is 'Safe Links' in Defender for Office 365?",
+            options: ["Encrypts links", "Scans URLs for malicious content at time-of-click", "Deletes links", "Shortens links"],
+            answer: 1, // B
+            hint: "Time of click protection.",
+            explanation: "Safe Links scans URLs in emails and docs when a user clicks them."
+        },
+        {
+            id: 177,
+            topic: "Identity",
+            question: "Which Entra feature automates the 'Joiner, Mover, Leaver' process?",
+            options: ["Lifecycle Workflows (Identity Governance)", "PIM", "Conditional Access", "MFA"],
+            answer: 0, // A
+            hint: "Lifecycle management.",
+            explanation: "Lifecycle Workflows automate tasks for user onboarding, role changes, and offboarding."
+        },
+        {
+            id: 178,
+            topic: "Copilot & AI",
+            question: "In PowerPoint, what can Copilot do?",
+            options: ["Create a presentation from a Word doc", "Edit video", "Manage databases", "Send emails"],
+            answer: 0, // A
+            hint: "Document to Slides.",
+            explanation: "Copilot in PowerPoint can generate slides based on the content of a Word document."
+        },
+        {
+            id: 179,
+            topic: "Purview & Data",
+            question: "What is 'Double Key Encryption' (DKE)?",
+            options: ["Two passwords", "Microsoft holds one key, you hold the other (complete control)", "2FA", "BitLocker"],
+            answer: 1, // B
+            hint: "Sovereign control.",
+            explanation: "DKE allows customers to hold a key that Microsoft cannot access, ensuring total data opacity."
+        },
+        {
+            id: 180,
+            topic: "Adoption",
+            question: "What is the 'Adoption Score' used for?",
+            options: ["Grading employees", "Measuring organizational digital transformation and usage health", "Security audit", "Licensing costs"],
+            answer: 1, // B
+            hint: "Org-level usage metrics.",
+            explanation: "Adoption Score provides insights into how the organization works and uses M365 tools."
+        },
+        {
+            id: 181,
+            topic: "Security",
+            question: "What is 'Intune' used for?",
+            options: ["Email filtering", "Device and App Management (MDM/MAM)", "Identity provider", "AI generation"],
+            answer: 1, // B
+            hint: "Endpoint Manager.",
+            explanation: "Microsoft Intune manages devices (MDM) and applications (MAM)."
+        },
+        {
+            id: 182,
+            topic: "Copilot & Agents",
+            question: "What are 'Graph Connectors'?",
+            options: ["Cables", "Ways to ingest external data (e.g., ServiceNow) into the Semantic Index", "Chatbots", "Design tools"],
+            answer: 1, // B
+            hint: "Ingesting external data.",
+            explanation: "Graph Connectors bring external data into the Microsoft Graph so Copilot can reason over it."
+        },
+        {
+            id: 183,
+            topic: "M365 Core Services",
+            question: "Which app is primarily for 'Project Management' and 'Task Planning'?",
+            options: ["Planner", "Word", "Stream", "Forms"],
+            answer: 0, // A
+            hint: "Kanban boards.",
+            explanation: "Microsoft Planner is the task and project management tool."
+        },
+        {
+            id: 184,
+            topic: "Identity",
+            question: "What is 'Windows Hello for Business'?",
+            options: ["Video chat", "Biometric/PIN authentication replacing passwords on devices", "Welcome screen", "Email client"],
+            answer: 1, // B
+            hint: "Device biometric.",
+            explanation: "Windows Hello for Business replaces passwords with strong two-factor authentication on devices."
+        },
+        {
+            id: 185,
+            topic: "Purview & Data",
+            question: "What is 'Communication Compliance' typically used to detect?",
+            options: ["Viruses", "Insider Trading, Harassment, Sensitive info sharing", "External hackers", "Spam"],
+            answer: 1, // B
+            hint: "Internal conduct.",
+            explanation: "It detects inappropriate conduct, policy violations, and sensitive info in communications."
+        },
+        {
+            id: 186,
+            topic: "Copilot & AI",
+            question: "What is the 'Copilot Dashboard' in Viva Insights?",
+            options: ["A game", "A view of Copilot readiness, adoption, and impact metrics", "Admin center", "License store"],
+            answer: 1, // B
+            hint: "Readiness and Impact.",
+            explanation: "The dashboard helps leaders understand readiness and the impact of Copilot on the org."
+        },
+        {
+            id: 187,
+            topic: "Security",
+            question: "Which feature protects against 'Business Email Compromise' (BEC)?",
+            options: ["Defender for Office 365 (Impersonation protection)", "Intune", "Planner", "Stream"],
+            answer: 0, // A
+            hint: "Anti-phishing.",
+            explanation: "Defender for Office 365 includes anti-phishing policies to detect impersonation."
+        },
+        {
+            id: 188,
+            topic: "M365 Admin",
+            question: "What is 'Microsoft 365 Archive'?",
+            options: ["Deleting data", "Cold storage for inactive SharePoint sites to save costs", "Tape backup", "Recycle bin"],
+            answer: 1, // B
+            hint: "Cost-effective storage.",
+            explanation: "M365 Archive offers lower-cost storage for inactive SharePoint sites."
+        },
+        {
+            id: 189,
+            topic: "Copilot & Agents",
+            question: "What is a 'Plugin' for Copilot?",
+            options: ["A hardware dongle", "An API connection allowing Copilot to perform actions in real-time", "A new monitor", "A license"],
+            answer: 1, // B
+            hint: "Real-time actions.",
+            explanation: "Plugins allow Copilot to interact with apps and perform actions (API calls) in real-time."
+        },
+        {
+            id: 190,
+            topic: "Identity",
+            question: "Which role allows viewing data but making no changes?",
+            options: ["Global Reader", "Global Admin", "User Admin", "Billing Admin"],
+            answer: 0, // A
+            hint: "Read-only.",
+            explanation: "Global Reader has read-only access to all admin centers."
+        },
+        {
+            id: 191,
+            topic: "Purview & Data",
+            question: "What is 'eDiscovery (Premium)' main advantage over Standard?",
+            options: ["Cheaper", "Advanced analytics, predictive coding, and reviewer management", "Less features", "Only for email"],
+            answer: 1, // B
+            hint: "AI for legal review.",
+            explanation: "Premium adds relevance/predictive coding and advanced workflow management."
+        },
+        {
+            id: 192,
+            topic: "Copilot & AI",
+            question: "Does Copilot work in 'Whiteboard'?",
+            options: ["No", "Yes, to generate ideas and categorize notes", "Only for drawing", "Only on mobile"],
+            answer: 1, // B
+            hint: "Brainstorming.",
+            explanation: "Copilot in Whiteboard helps categorize ideas and generate sticky notes."
+        },
+        {
+            id: 193,
+            topic: "Security",
+            question: "What is 'Secure Score'?",
+            options: ["A game", "A measurement of an organization's security posture with improvement actions", "A license count", "A phishing tool"],
+            answer: 1, // B
+            hint: "Posture measurement.",
+            explanation: "Secure Score measures security posture and recommends improvement actions."
+        },
+        {
+            id: 194,
+            topic: "M365 Core Services",
+            question: "What is 'Microsoft Lists'?",
+            options: ["Shopping app", "Information tracking app (smart tables)", "Email app", "Video app"],
+            answer: 1, // B
+            hint: "Smart columns/rows.",
+            explanation: "Lists is used to track information and organize work."
+        },
+        {
+            id: 195,
+            topic: "Identity",
+            question: "What is 'Auhtenticator Number Matching'?",
+            options: ["A math game", "MFA security feature to prevent fatigue attacks", "Phone number sync", "Billing code"],
+            answer: 1, // B
+            hint: "Prevents accidental approval.",
+            explanation: "Users must type the number shown on screen into the app, preventing accidental approvals."
+        },
+        {
+            id: 196,
+            topic: "Purview & Data",
+            question: "What is a 'Retention Label' vs 'Sensitivity Label'?",
+            options: ["Retention is for time/life-cycle, Sensitivity is for security/encryption", "They are the same", "Retention is for encryption", "Sensitivity is for deletion"],
+            answer: 0, // A
+            hint: "Time vs Security.",
+            explanation: "Retention manages how long data is kept; Sensitivity manages access and encryption."
+        },
+        {
+            id: 197,
+            topic: "Copilot & Agents",
+            question: "What is 'Generative Answers' in Copilot Studio?",
+            options: ["Pre-scripted answers", "Using LLMs to answer based on a knowledge source dynamically", "Random answers", "No answers"],
+            answer: 1, // B
+            hint: "Dynamic response.",
+            explanation: "Generative answers allow the bot to answer unscripted questions using data sources."
+        },
+        {
+            id: 198,
+            topic: "M365 Admin",
+            question: "What is 'Microsoft 365 Backup'?",
+            options: ["USB stick", "High-speed recovery solution for OneDrive, SharePoint, and Exchange", "Printouts", "Local copy"],
+            answer: 1, // B
+            hint: "Fast recovery.",
+            explanation: "M365 Backup provides rapid restore capabilities for large volumes of data."
+        },
+        {
+            id: 199,
+            topic: "Security",
+            question: "What is 'Attack Simulation Training'?",
+            options: ["Hacking tool", "Phishing simulation to train employees", "Video game", "Network test"],
+            answer: 1, // B
+            hint: "Employee education.",
+            explanation: "It runs simulated phishing attacks to train users."
+        },
+        {
+            id: 200,
+            topic: "Identity",
+            question: "What allows users to reset their own passwords?",
+            options: ["MFA", "SSPR (Self-Service Password Reset)", "PIM", "SSO"],
+            answer: 1, // B
+            hint: "Self-help.",
+            explanation: "SSPR allows users to reset passwords without helpdesk."
+        },
+        {
+            id: 201,
+            topic: "M365 Core Services",
+            question: "What is 'Viva Learning'?",
+            options: ["A school", "Central hub for learning content in Teams", "A test", "A video player"],
+            answer: 1, // B
+            hint: "LMS integration.",
+            explanation: "Viva Learning aggregates learning content from various sources in Teams."
+        },
+        {
+            id: 202,
+            topic: "Copilot & AI",
+            question: "Does Copilot in Loop work?",
+            options: ["No", "Yes, assists with content creation and collaboration", "Only for printing", "Only offline"],
+            answer: 1, // B
+            hint: "Collaborative canvas.",
+            explanation: "Copilot helps iterate on content within Loop components."
+        },
+        {
+            id: 203,
+            topic: "Security",
+            question: "What is 'Cloud App Security' (legacy name)?",
+            options: ["Defender for Cloud Apps", "Intune", "Entra", "Purview"],
+            answer: 0, // A
+            hint: "New name.",
+            explanation: "Microsoft Defender for Cloud Apps was formerly Cloud App Security."
+        },
+        {
+            id: 204,
+            topic: "Identity",
+            question: "What does 'Conditional Access' primarily control?",
+            options: ["Network speed", "Access to resources based on signals (Who, Where, Device)", "Printer access", "File names"],
+            answer: 1, // B
+            hint: "If this, then that.",
+            explanation: "It is the policy engine that grants/blocks access based on signals."
+        },
+        {
+            id: 205,
+            topic: "Purview & Data",
+            question: "Where are Audit Logs stored?",
+            options: ["Local PC", "Unified Audit Log in Purview", "User email", "Recycle bin"],
+            answer: 1, // B
+            hint: "Unified view.",
+            explanation: "Purview stores audit records in the Unified Audit Log."
+        },
+        {
+            id: 206,
+            topic: "Copilot & Agents",
+            question: "What is a 'Topic' in Copilot Studio?",
+            options: ["A conversation path/subject", "A license", "A user", "A website"],
+            answer: 0, // A
+            hint: "Conversation logic.",
+            explanation: "Topics define how the conversation flows for specific subjects."
+        },
+        {
+            id: 207,
+            topic: "M365 Admin",
+            question: "What is 'Customer Lockbox'?",
+            options: ["A safe", "Process requiring customer approval for Microsoft engineer access", "Encryption", "Password manager"],
+            answer: 1, // B
+            hint: "Approval workflow.",
+            explanation: "Customer Lockbox ensures Microsoft engineers cannot access content without explicit approval."
+        },
+        {
+            id: 208,
+            topic: "Security",
+            question: "What is 'Autopilot'?",
+            options: ["Plane mode", "Zero-touch device deployment service", "AI bot", "Car mode"],
+            answer: 1, // B
+            hint: "Device setup.",
+            explanation: "Windows Autopilot sets up new devices without IT touching them."
+        },
+        {
+            id: 209,
+            topic: "Identity",
+            question: "What is 'Passwordless'?",
+            options: ["No security", "Using FIDO2, Hello, or Authenticator instead of passwords", "Sharing passwords", "Using short passwords"],
+            answer: 1, // B
+            hint: "Remove the password.",
+            explanation: "Passwordless methods remove the need to type passwords."
+        },
+        {
+            id: 210,
+            topic: "Copilot & AI",
+            question: "What is 'Microsoft 365 Copilot' vs 'Copilot Pro'?",
+            options: ["Same thing", "M365 Copilot is for Enterprise/Work data; Pro is for Individuals/Consumers", "Pro is better", "M365 is free"],
+            answer: 1, // B
+            hint: "Enterprise vs Consumer.",
+            explanation: "M365 Copilot includes Graph/Enterprise data protection; Pro is for personal MSA accounts."
+        },
+        {
+            id: 211,
+            topic: "Purview & Data",
+            question: "What is 'Auto-labeling'?",
+            options: ["Magic", "Automatically applying sensitivity labels based on content detection", "User labeling", "Default labeling"],
+            answer: 1, // B
+            hint: "Automatic classification.",
+            explanation: "Auto-labeling uses service-side classification to label files at rest or in transit."
+        },
+        {
+            id: 212,
+            topic: "M365 Core Services",
+            question: "What is 'Viva Engage'?",
+            options: ["Yammer (Community/Social)", "Email", "Files", "Chat"],
+            answer: 0, // A
+            hint: "Social network.",
+            explanation: "Viva Engage is the rebrand/evolution of Yammer."
+        },
+        {
+            id: 213,
+            topic: "Security",
+            question: "What signal does Intune provide to Conditional Access?",
+            options: ["Device Compliance status", "User mood", "Weather", "Stock price"],
+            answer: 0, // A
+            hint: "Is the device healthy?",
+            explanation: "Intune marks devices as Compliant/Non-compliant."
+        },
+        {
+            id: 214,
+            topic: "Copilot & Agents",
+            question: "What is an 'Entity' in Copilot Studio?",
+            options: ["A ghost", "Information unit to extract (e.g., Color, Number, City)", "A user", "A button"],
+            answer: 1, // B
+            hint: "Data extraction.",
+            explanation: "Entities identify specific pieces of information in user input."
+        },
+        {
+            id: 215,
+            topic: "M365 Admin",
+            question: "What is 'FastTrack'?",
+            options: ["Racing game", "Microsoft service to help onboard/migrate to M365", "Internet speed", "VPN"],
+            answer: 1, // B
+            hint: "Onboarding help.",
+            explanation: "FastTrack provides guidance for deployment and adoption."
+        },
+        {
+            id: 216,
+            topic: "Identity",
+            question: "What is 'Cloud Sync' (Entra)?",
+            options: ["Dropbox", "Lightweight agent for syncing AD to Cloud", "Weather sync", "Phone sync"],
+            answer: 1, // B
+            hint: "Lighter than Connect.",
+            explanation: "Cloud Sync is the lightweight agent-based alternative to Azure AD Connect."
+        },
+        {
+            id: 217,
+            topic: "Purview & Data",
+            question: "What is 'Records Management'?",
+            options: ["Music", "Managing regulatory/legal records retention and proof of deletion", "CDs", "Email sorting"],
+            answer: 1, // B
+            hint: "Formal retention.",
+            explanation: "Records Management handles formal, immutable records."
+        },
+        {
+            id: 218,
+            topic: "Copilot & AI",
+            question: "What is 'Responsible AI' principle of 'Reliability'?",
+            options: ["Works sometimes", "Works consistently and safely under expected conditions", "Cheap", "Fast"],
+            answer: 1, // B
+            hint: "Consistent.",
+            explanation: "Reliability ensures the system performs as expected."
+        },
+        {
+            id: 219,
+            topic: "M365 Core Services",
+            question: "What is 'Microsoft Forms'?",
+            options: ["Paperwork", "Survey and Quiz tool", "Shape drawing", "Login screen"],
+            answer: 1, // B
+            hint: "Surveys.",
+            explanation: "Forms allows creating surveys and quizzes."
+        },
+        {
+            id: 220,
+            topic: "Security",
+            question: "What is 'Microsoft Sentinel'?",
+            options: ["A guard", "Cloud-native SIEM/SOAR", "Antivirus", "Firewall"],
+            answer: 1, // B
+            hint: "SIEM.",
+            explanation: "Sentinel is the SIEM (Security Information and Event Management) solution."
+        },
+        {
+            id: 221,
+            topic: "Licensing",
+            question: "What is 'Group-based Licensing'?",
+            options: ["Sharing one key", "Assigning licenses to a security group to automate user assignment", "Free licenses", "Family plan"],
+            answer: 1, // B
+            hint: "Automation.",
+            explanation: "It assigns licenses to members of a group automatically."
+        },
+        {
+            id: 222,
+            topic: "Purview & Data",
+            question: "What is 'Insider Risk Management'?",
+            options: ["Managing stock", "Detecting internal threats (IP theft, harassment)", "Managing visitors", "External firewall"],
+            answer: 1, // B
+            hint: "Internal threat.",
+            explanation: "It detects risks originating from within the organization."
+        },
+        {
+            id: 223,
+            topic: "Copilot & Agents",
+            question: "What is 'Publishing' an agent?",
+            options: ["Printing", "Making it available to users via channels", "Deleting", "Hiding"],
+            answer: 1, // B
+            hint: "Deploying.",
+            explanation: "Publishing pushes the agent to channels like Teams or websites."
+        },
+        {
+            id: 224,
+            topic: "M365 Admin",
+            question: "What is the 'Org Settings' page?",
+            options: ["User settings", "Tenant-wide configuration for services", "My profile", "Theme"],
+            answer: 1, // B
+            hint: "Global config.",
+            explanation: "Org settings control tenant-wide service configurations."
+        },
+        {
+            id: 225,
+            topic: "Identity",
+            question: "What is 'Administrative Unit'?",
+            options: ["A desk", "Container to scope admin permissions (e.g., French admins manage French users)", "A folder", "A license"],
+            answer: 1, // B
+            hint: "Scoping admins.",
+            explanation: "Administrative Units restrict admin scope to a subset of users."
+        },
+        {
+            id: 226,
+            topic: "Security",
+            question: "What is 'Defender for Identity'?",
+            options: ["ID card protector", "Protects On-Prem AD from attacks", "Cloud ID", "Email scan"],
+            answer: 1, // B
+            hint: "On-Prem protection.",
+            explanation: "It monitors on-prem domain controllers for threats."
+        },
+        {
+            id: 227,
+            topic: "Copilot & AI",
+            question: "What is 'Prompt Engineering'?",
+            options: ["Building servers", "Crafting inputs to get the best AI output", "Coding", "Wiring"],
+            answer: 1, // B
+            hint: "Writing good questions.",
+            explanation: "It is the skill of crafting optimal prompts."
+        },
+        {
+            id: 228,
+            topic: "Purview & Data",
+            question: "What is 'Preservation Lock'?",
+            options: ["A safe", "Making a retention policy immutable (cannot be turned off)", "File lock", "Screen lock"],
+            answer: 1, // B
+            hint: "Regulatory requirement.",
+            explanation: "It prevents anyone (including admins) from turning off retention."
+        },
+        {
+            id: 229,
+            topic: "M365 Core Services",
+            question: "What is a 'Shared Channel' in Teams?",
+            options: ["Public channel", "Channel shared with external users without switching tenants (Connect)", "Private channel", "General channel"],
+            answer: 1, // B
+            hint: "Teams Connect.",
+            explanation: "Shared channels allow seamless external collaboration."
+        },
+        {
+            id: 230,
+            topic: "Identity",
+            question: "What is 'Break Glass Account'?",
+            options: ["Emergency admin account used only when normal access fails", "Broken account", "Test account", "Guest"],
+            answer: 0, // A
+            hint: "Emergency.",
+            explanation: "It is an emergency account excluded from conditional access."
+        },
+        {
+            id: 231,
+            topic: "Security",
+            question: "What is 'Zero Trust'?",
+            options: ["No security", "Security model: Never trust, always verify", "Trust everyone", "VPN only"],
+            answer: 1, // B
+            hint: "Never trust.",
+            explanation: "Zero Trust is the 'Never trust, always verify' model."
+        },
+        {
+            id: 232,
+            topic: "Copilot & Agents",
+            question: "What allows Copilot to know 'Who' is asking?",
+            options: ["Magic", "Entra ID Context", "Camera", "Microphone"],
+            answer: 1, // B
+            hint: "Identity.",
+            explanation: "Copilot relies on the user's authenticated Entra ID context."
+        },
+        {
+            id: 233,
+            topic: "M365 Admin",
+            question: "What is 'PowerShell'?",
+            options: ["Battery", "Command-line shell and scripting language for management", "A game", "A database"],
+            answer: 1, // B
+            hint: "Scripting.",
+            explanation: "PowerShell is used for advanced administration and automation."
+        },
+        {
+            id: 234,
+            topic: "Purview & Data",
+            question: "What is 'Subject Rights Request'?",
+            options: ["Admin right", "Request by a person to see/delete their data (Privacy)", "License request", "Login"],
+            answer: 1, // B
+            hint: "GDPR/Privacy.",
+            explanation: "It is a formal request to access or delete personal data."
+        },
+        {
+            id: 235,
+            topic: "Identity",
+            question: "What is 'App Registration'?",
+            options: ["Buying apps", "Registering an application in Entra ID to allow auth/API access", "Installing on phone", "Deleting apps"],
+            answer: 1, // B
+            hint: "Identity for apps.",
+            explanation: "It establishes an identity for an application."
+        },
+        {
+            id: 236,
+            topic: "Copilot & AI",
+            question: "What is 'Copilot Lab'?",
+            options: ["Science room", "Hub for learning prompts and sharing them", "Testing center", "Settings"],
+            answer: 1, // B
+            hint: "Prompt library.",
+            explanation: "Copilot Lab is a resource for learning and sharing prompts."
+        },
+        {
+            id: 237,
+            topic: "Security",
+            question: "What is 'Exploit Protection'?",
+            options: ["Hacking", "Defender feature to mitigate memory attacks", "VPN", "Firewall"],
+            answer: 1, // B
+            hint: "Memory safety.",
+            explanation: "It helps protect devices from malware using exploits."
+        },
+        {
+            id: 238,
+            topic: "M365 Core Services",
+            question: "What is 'Bookings'?",
+            options: ["Library", "App for scheduling appointments with customers", "Travel app", "Betting"],
+            answer: 1, // B
+            hint: "Appointments.",
+            explanation: "Microsoft Bookings manages appointment scheduling."
+        },
+        {
+            id: 239,
+            topic: "Identity",
+            question: "What is 'Access Review'?",
+            options: ["Movie review", "Process to recertify if users still need access", "Login", "Audit log"],
+            answer: 1, // B
+            hint: "Recertification.",
+            explanation: "It ensures users only keep access they still need."
+        },
+        {
+            id: 240,
+            topic: "Purview & Data",
+            question: "What is 'Exact Data Match' (EDM)?",
+            options: ["Rough guess", "Advanced DLP using exact values (e.g., specific customer IDs) from a database", "Keyword search", "Regex"],
+            answer: 1, // B
+            hint: "Exact fingerprint.",
+            explanation: "EDM allows DLP to detect exact matches from a structured database."
+        },
+        {
+            id: 241,
+            topic: "Copilot & Agents",
+            question: "What is 'Orchestrator' in Copilot?",
+            options: ["Musician", "The brain that coordinates LLM, Graph, and Plugins", "The user", "The screen"],
+            answer: 1, // B
+            hint: "Coordinator.",
+            explanation: "The Orchestrator manages the entire request flow."
+        },
+        {
+            id: 242,
+            topic: "M365 Admin",
+            question: "What is 'Cloud Shell'?",
+            options: ["Sea shell", "Browser-based command line access", "OneDrive", "SharePoint"],
+            answer: 1, // B
+            hint: "Browser terminal.",
+            explanation: "Cloud Shell allows running PowerShell/CLI from the browser."
+        },
+        {
+            id: 243,
+            topic: "Security",
+            question: "What is 'BitLocker'?",
+            options: ["Virus", "Drive encryption feature", "Password manager", "Cloud storage"],
+            answer: 1, // B
+            hint: "Disk encryption.",
+            explanation: "BitLocker encrypts the hard drive."
+        },
+        {
+            id: 244,
+            topic: "Identity",
+            question: "What is 'MFA Fatigue'?",
+            options: ["Being tired", "Attacker spamming MFA requests hoping user accepts one", "Broken phone", "Slow internet"],
+            answer: 1, // B
+            hint: "Spamming prompts.",
+            explanation: "It is an attack method involving spamming notifications."
+        },
+        {
+            id: 245,
+            topic: "Purview & Data",
+            question: "What is 'Audit Log Retention' (Standard)?",
+            options: ["1 day", "180 days (default)", "10 years", "Forever"],
+            answer: 1, // B
+            hint: "Half a year.",
+            explanation: "Standard audit logs are retained for 180 days by default."
+        },
+        {
+            id: 246,
+            topic: "Copilot & AI",
+            question: "What is 'Context' in prompting?",
+            options: ["Background info to help AI answer", "The answer", "The user", "The price"],
+            answer: 0, // A
+            hint: "Background.",
+            explanation: "Context helps the AI understand the specific situation."
+        },
+        {
+            id: 247,
+            topic: "M365 Core Services",
+            question: "What is 'Visio'?",
+            options: ["Video call", "Diagramming and vector graphics app", "Email", "Chat"],
+            answer: 1, // B
+            hint: "Diagrams.",
+            explanation: "Visio is for creating diagrams and flowcharts."
+        },
+        {
+            id: 248,
+            topic: "Security",
+            question: "What is 'Security Defaults'?",
+            options: ["Weak security", "Basic pre-configured security settings (MFA) for tenants without Conditional Access", "No security", "Paid addon"],
+            answer: 1, // B
+            hint: "Baseline.",
+            explanation: "Security Defaults provide baseline protection for free."
+        },
+        {
+            id: 249,
+            topic: "Identity",
+            question: "What is 'Graph Explorer'?",
+            options: ["Map", "Web tool to test Microsoft Graph API calls", "Browser", "File explorer"],
+            answer: 1, // B
+            hint: "API tester.",
+            explanation: "It is a developer tool to test Graph API queries."
+        },
+        {
+            id: 250,
+            topic: "Purview & Data",
+            question: "What is 'Data Residency'?",
+            options: ["Where user lives", "Physical location where data is stored", "Cloud", "Backup"],
+            answer: 1, // B
+            hint: "Geography.",
+            explanation: "Data residency refers to the geographic location of stored data."
+        },
+        {
+            id: 251,
+            topic: "Security",
+            question: "Does Defender for Office 365 protect against 'Zero-day' malware?",
+            options: ["No", "Yes, via Safe Attachments (Sandboxing)", "Only known virus", "Only spam"],
+            answer: 1, // B
+            hint: "Sandboxing.",
+            explanation: "Safe Attachments detonates files in a sandbox to catch unknown threats."
+        },
+        {
+            id: 252,
+            topic: "Copilot & Agents",
+            question: "What is 'PVA' (legacy)?",
+            options: ["Copilot Studio (formerly Power Virtual Agents)", "Power View", "Power Apps", "Public"],
+            answer: 0, // A
+            hint: "Old name.",
+            explanation: "Copilot Studio was formerly known as Power Virtual Agents."
+        },
+        {
+            id: 253,
+            topic: "M365 Admin",
+            question: "What is 'Service Request'?",
+            options: ["Asking for lunch", "Support ticket with Microsoft", "Buying license", "Email"],
+            answer: 1, // B
+            hint: "Help ticket.",
+            explanation: "Service Requests are support tickets."
+        },
+        {
+            id: 254,
+            topic: "Identity",
+            question: "What is 'Tenant'?",
+            options: ["Renter", "Dedicated instance of M365 services for an organization", "User", "License"],
+            answer: 1, // B
+            hint: "Your instance.",
+            explanation: "A tenant is the container for your organization's data and users."
+        },
+        {
+            id: 255,
+            topic: "Purview & Data",
+            question: "What is 'Search & Intelligence'?",
+            options: ["Google", "Admin center area to manage Microsoft Search settings", "Spying", "Bing"],
+            answer: 1, // B
+            hint: "Internal search.",
+            explanation: "It manages the internal enterprise search experience."
+        },
+        {
+            id: 256,
+            topic: "Copilot & AI",
+            question: "What is 'Copilot in Windows'?",
+            options: ["Office app", "OS-integrated AI assistant", "Start menu", "Wallpaper"],
+            answer: 1, // B
+            hint: "Desktop.",
+            explanation: "It is the AI assistant integrated directly into Windows 11."
+        },
+        {
+            id: 257,
+            topic: "Security",
+            question: "What is 'Device Registration'?",
+            options: ["Buying device", "Making Entra aware of a device (BYOD)", "Login", "Imaging"],
+            answer: 1, // B
+            hint: "Not joined, just registered.",
+            explanation: "Registration lets Entra know about personal devices for basic auth."
+        },
+        {
+            id: 258,
+            topic: "M365 Core Services",
+            question: "What is 'Loop Component'?",
+            options: ["Music loop", "Portable, live content block synced across apps", "Gif", "Video"],
+            answer: 1, // B
+            hint: "Atomic unit.",
+            explanation: "Loop components are live widgets (tables, lists) that sync across Chat/Email."
+        },
+        {
+            id: 259,
+            topic: "Identity",
+            question: "What is 'Dynamic Distribution Group'?",
+            options: ["Static list", "Email list based on queries (e.g., All 'Sales')", "Security group", "Chat"],
+            answer: 1, // B
+            hint: "Query-based email list.",
+            explanation: "It calculates membership based on user attributes for emailing."
+        },
+        {
+            id: 260,
+            topic: "Purview & Data",
+            question: "What is 'Information Barriers'?",
+            options: ["Firewall", "Policy preventing communication between two groups (e.g., Traders vs Brokers)", "DLP", "Spam filter"],
+            answer: 1, // B
+            hint: "Ethical wall.",
+            explanation: "Information Barriers prevent conflict-of-interest groups from communicating."
+        }
+    ];
+
+    // --- APP LOGIC ---
+
+    let currentQuestions = [];
+    let currentIndex = 0;
+    let score = 0;
+    let userAttempts = [];
+
+    // Initialize Max Question Count
+    document.getElementById('max-q-label').textContent = `(Max: ${fullQuestionBank.length})`;
+    document.getElementById('q-count').max = fullQuestionBank.length;
+
+    function startExam() {
+        const countInput = document.getElementById('q-count');
+        let count = parseInt(countInput.value);
+        
+        if (count < 1) count = 5;
+        if (count > fullQuestionBank.length) count = fullQuestionBank.length;
+
+        // Shuffle and slice
+        currentQuestions = [...fullQuestionBank]
+            .sort(() => 0.5 - Math.random())
+            .slice(0, count);
+
+        currentIndex = 0;
+        score = 0;
+        userAttempts = new Array(count).fill(null);
+
+        // UI Transition
+        document.getElementById('setup-screen').classList.add('hidden');
+        document.getElementById('quiz-screen').classList.remove('hidden');
+        
+        renderQuestion();
+    }
+
+    function renderQuestion() {
+        const q = currentQuestions[currentIndex];
+        
+        // Update Headers
+        document.getElementById('progress-indicator').textContent = `Question ${currentIndex + 1}/${currentQuestions.length}`;
+        document.getElementById('score-indicator').textContent = `Score: ${score}`;
+
+        // Reset UI State
+        document.getElementById('hint-display').style.display = 'none';
+        document.getElementById('explanation-display').style.display = 'none';
+        document.getElementById('hint-btn').disabled = false;
+        document.getElementById('next-btn').disabled = true;
+
+        // Populate Content
+        document.getElementById('q-text').textContent = q.question;
+        document.getElementById('hint-text').textContent = q.hint;
+        document.getElementById('explanation-text').textContent = q.explanation;
+
+        // Populate Options
+        const optionsContainer = document.getElementById('options-container');
+        optionsContainer.innerHTML = '';
+
+        q.options.forEach((opt, idx) => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerHTML = `<strong>${String.fromCharCode(65 + idx)})</strong> ${opt}`;
+            btn.onclick = () => checkAnswer(idx, btn);
+            optionsContainer.appendChild(btn);
+        });
+    }
+
+    function checkAnswer(selectedIdx, btnElement) {
+        const q = currentQuestions[currentIndex];
+        const buttons = document.querySelectorAll('.option-btn');
+        
+        // Disable all buttons
+        buttons.forEach(b => b.disabled = true);
+        
+        // Mark selected
+        if (selectedIdx === q.answer) {
+            btnElement.classList.add('correct');
+            score++;
+            document.getElementById('score-indicator').textContent = `Score: ${score}`;
+        } else {
+            btnElement.classList.add('incorrect');
+            // Highlight correct one
+            buttons[q.answer].classList.add('correct');
+        }
+
+        // Show Explanation
+        document.getElementById('explanation-display').style.display = 'block';
+        
+        // Enable Next
+        document.getElementById('next-btn').disabled = false;
+        
+        // Save result
+        userAttempts[currentIndex] = {
+            questionId: q.id,
+            correct: selectedIdx === q.answer,
+            topic: q.topic
+        };
+    }
+
+    function showHint() {
+        document.getElementById('hint-display').style.display = 'block';
+        document.getElementById('hint-btn').disabled = true;
+    }
+
+    function nextQuestion() {
+        if (currentIndex < currentQuestions.length - 1) {
+            currentIndex++;
+            renderQuestion();
+        } else {
+            endExam();
+        }
+    }
+
+    function endExam() {
+        document.getElementById('quiz-screen').classList.add('hidden');
+        document.getElementById('results-screen').classList.remove('hidden');
+
+        const percentage = Math.round((score / currentQuestions.length) * 100);
+        
+        // Final Score Display
+        const finalScoreDiv = document.getElementById('final-score');
+        finalScoreDiv.textContent = `${score} / ${currentQuestions.length} (${percentage}%)`;
+
+        // Feedback Message
+        const feedbackDiv = document.getElementById('feedback-msg');
+        if (percentage >= 70) {
+            feedbackDiv.innerHTML = "<h2 style='color: var(--success)'>Pass! Great job.</h2>";
+        } else {
+            feedbackDiv.innerHTML = "<h2 style='color: var(--error)'>Needs Improvement. Keep studying!</h2>";
+        }
+
+        // Topic Breakdown
+        const breakdown = {};
+        userAttempts.forEach(attempt => {
+            if (!breakdown[attempt.topic]) {
+                breakdown[attempt.topic] = { total: 0, correct: 0 };
+            }
+            breakdown[attempt.topic].total++;
+            if (attempt.correct) breakdown[attempt.topic].correct++;
+        });
+
+        const list = document.getElementById('topic-breakdown');
+        list.innerHTML = '';
+        
+        for (const [topic, stats] of Object.entries(breakdown)) {
+            const topicPct = Math.round((stats.correct / stats.total) * 100);
+            const li = document.createElement('li');
+            li.style.marginBottom = "10px";
+            li.innerHTML = `<strong>${topic}:</strong> ${stats.correct}/${stats.total} (${topicPct}%)`;
+            list.appendChild(li);
+        }
+    }
+</script>
+
+</body>
+</html>
